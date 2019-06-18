@@ -1,0 +1,66 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS Data Migration rocks!",
+    "Resources": {
+        "TheVPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": "172.30.0.0/16",
+                "EnableDnsHostnames": true,
+                "EnableDnsSupport": true,
+                "Tags": [
+                    { "Key": "name", "Value": "vpc-dms" },
+                    { "Key": "purpose", "Value": "vpc for data migration demo artifacts" }
+                ]
+            }
+        },
+        "ThePublicSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": "172.30.1.0/24",
+                "VpcId": { "Ref": "TheVPC" },
+                "Tags": [
+                    { "Key": "name", "Value": "public-sn" }
+                ]
+            }
+        },
+        "TheInternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "DependsOn": "TheVPC",
+            "Properties": {
+                "Tags": [
+                    { "Key": "name", "Value": "dms-demo-igw" }
+                ]
+            }
+        },
+        "TheVpcInternetGatewayAttachment": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": { "Ref": "TheVPC" },
+                "InternetGatewayId": { "Ref": "TheInternetGateway" }
+            }
+        },
+        "ThePublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": { "Ref": "TheVPC" }
+            }
+        },
+        "ThePublicRoute": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": "TheVpcInternetGatewayAttachment",
+            "Properties": {
+                "RouteTableId": { "Ref": "ThePublicRouteTable" },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": { "Ref": "TheInternetGateway" }
+            }
+        },
+        "ThePublicSubnetAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": { "Ref": "ThePublicSubnet" },
+                "RouteTableId": { "Ref": "ThePublicRouteTable" }
+            }
+        }
+    }
+}
